@@ -1,0 +1,5 @@
+/app/.idea/
+/venv/
+/app/config/
+/db/
+**/*.sql
