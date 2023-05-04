@@ -64,12 +64,11 @@ class File:
         df_month.fillna(0, inplace=True)
 
         df_month['month'] = df_month[Columns.DATE].dt.month
+        df_month['day'] = df_month[Columns.DATE].dt.day
 
         df_month['runtot'] = df_month[['month', Columns.AMOUNT]].groupby('month').cumsum()
 
-        y = range(1, 31)
+        df_month.loc[df_month['month'] == end.month, 'period'] = 'current'
+        df_month.loc[df_month['month'] == start.month, 'period'] = 'previous'
 
-        x1 = df_month[df_month['month'] == end.month]
-        x2 = df_month[df_month['month'] == start.month]
-
-        return y, x1, x2
+        return df_month

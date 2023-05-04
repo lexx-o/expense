@@ -2,6 +2,8 @@ from config import config
 
 from processing import get_folder_table, search_file, File
 
+from charts import plot_mom
+
 
 if __name__ == '__main__':
 
@@ -14,5 +16,7 @@ if __name__ == '__main__':
     test_file = File(file_id=file['id'], name=file['name'])
 
     expenses = test_file.monthly_cumulative_expenses(accs=['Credit ENBD', 'AED ENBD', 'Cash AED', 'Capital AED'], month_offset=-5)
+
+    fig = plot_mom(expenses)
 
     print('Done!')

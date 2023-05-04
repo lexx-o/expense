@@ -69,11 +69,10 @@ def dump_db():
 @app.get("/chart")
 async def chart(offset: int=0):
 
-    y, x1, x2 = test_file.monthly_cumulative_expenses(accs=['Credit ENBD', 'AED ENBD', 'Cash AED', 'Capital AED'],
+    data = test_file.monthly_cumulative_expenses(accs=['Credit ENBD', 'AED ENBD', 'Cash AED', 'Capital AED'],
                                                      month_offset=offset)
 
-    x, y = expenses['day'], expenses['expense']
-    fig = plot(x, y)
+    fig = plot_mom(data)
 
     # Return the PNG image as HTML
     png_output = yield_plot(fig)
