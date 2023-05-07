@@ -5,6 +5,8 @@ import pandas as pd
 from driveio import _download_file, _load_folder
 from config.variables import Columns
 
+from dataclasses import dataclass
+
 
 pd.set_option('mode.chained_assignment', None)
 
@@ -28,17 +30,19 @@ def search_file(folder: pd.DataFrame, name: str) -> dict:
 
     return file
 
-
+@dataclass
 class File:
+
+    id: str
+    name: str
+
     def _format_dataframe(self):
         self.data[Columns.DATE] = pd.to_datetime(self.data[Columns.DATE])
         self.data[Columns.AMOUNT].replace(to_replace='-', value='0', inplace=True)
         self.data[Columns.AMOUNT] = self.data[Columns.AMOUNT].astype('float')
 
-    def __init__(self, file_id, name):
-        self.id = file_id
-        self.name = name
-        iostream = _download_file(file_id=file_id)
+    def __post_init__(self):
+        iostream = _download_file(file_id=self.id)
         iostream.seek(0)
         self.data = pd.read_csv(iostream)
         self._format_dataframe()
@@ -47,7 +51,7 @@ class File:
         return self.name
 
     def __repr__(self):
-        return f'File ({self.name}, {self.id})'
+        return f'File ({self.name}, {self.id}, r/c: {self.data.shape})'
 
     def monthly_cumulative_expenses(self, accs: list, month_offset=0):
         df = self.data[self.data[Columns.ACC].isin(accs)]
