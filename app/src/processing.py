@@ -1,11 +1,10 @@
-from datetime import date, timedelta
+from dataclasses import dataclass
+from datetime import date
 
 import pandas as pd
 
 from driveio import _download_file, _load_folder
 from config.variables import Columns
-
-from dataclasses import dataclass
 
 
 pd.set_option('mode.chained_assignment', None)
@@ -29,6 +28,7 @@ def search_file(folder: pd.DataFrame, name: str) -> dict:
     file = dict(file)
 
     return file
+
 
 @dataclass
 class File:
@@ -64,7 +64,8 @@ class File:
         df_expense = df[~df[Columns.CAT].isin(['Income', 'Account Transfer'])]
         df_expense[Columns.AMOUNT] = df[Columns.AMOUNT] * -1
 
-        df_month = grid.merge(df_expense.groupby(Columns.DATE).sum()[Columns.AMOUNT].reset_index(), on=['Date'], how='left')
+        df_month = grid.merge(df_expense.groupby(Columns.DATE).sum()[Columns.AMOUNT].reset_index(),
+                              on=['Date'], how='left')
         df_month.fillna(0, inplace=True)
 
         df_month['month'] = df_month[Columns.DATE].dt.month

@@ -4,6 +4,8 @@ services:
   app:
     image: python
     container_name: drive-reader
+    depends_on:
+      - db
     ports: 
       - 8000:8000
     volumes:
@@ -24,4 +26,4 @@ services:
     ports:
       - 54320:5432
     volumes:
-      - ./db/pgdump.sql:/docker-entrypoint-initdb.d/initdb.sql
+      - ./db/init:/docker-entrypoint-initdb.d

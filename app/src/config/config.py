@@ -8,6 +8,7 @@ from .directories import directories
 class Config:
     token: str
     folders: dict
+    schema: str
 
 
 def _load_base_config_file(path):

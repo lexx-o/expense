@@ -1,21 +1,23 @@
+import logging
 import uvicorn
-import psycopg2
 
 from fastapi import FastAPI
-from fastapi.responses import Response
+from fastapi.responses import Response, PlainTextResponse
 import pandas as pd
 
 from drive import service
-from config import config, directories
+from config import config
 from charts import *
 from processing import get_folder_table, search_file, File
+from db.connector import pg_engine
+from config.variables import AccGroup
 
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 expense_folder = config.folders['expensemanager']
 
-df_folder = get_folder_table(expense_folder)
-file = search_file(df_folder, '.*master.*')
-test_file = File(file_id=file['id'], name=file['name'])
 
 app = FastAPI()
 
@@ -26,7 +28,7 @@ def root():
 
 
 @app.get("/files")
-def get_file_info_table() -> dict:
+def get_files_dict() -> dict:
 
     results = service.files().list(q=f"'{expense_folder}' in parents",
                                    # pageSize=10,
@@ -43,40 +45,37 @@ def get_file_info_table() -> dict:
     return files_table.to_dict()
 
 
-@app.get("/dump")
-def dump_db():
-    # Connect to the Postgres database
-    conn = psycopg2.connect(
-        host="postgres-db",
-        port="5432",
-        database="postgres",
-        user="postgres",
-        password="pg_pass"
-    )
+@app.get("/test")
+def test():
+    # dump_schema(config.schema, pg_engine, dump_path=directories.root/'dump.sql')
+    # dump_db(pg_engine, config.schema)
+    # response = dump_db()
 
-    # Create a cursor object
-    cur = conn.cursor()
-
-    # Execute the pg_dump command and save the output to a file
-    with open(directories.root/"dump.sql", "w") as f:
-        cur.copy_to(f, r"(SELECT pg_catalog.pg_tablespace_location(oid)||'/'||relfilenode||'.csv' FROM pg_class WHERE relkind='r' AND relnamespace='public')")
-
-    # Close the cursor and connection
-    cur.close()
-    conn.close()
+    return PlainTextResponse('Test')
 
 
 @app.get("/chart")
-async def chart(offset: int=0):
+async def chart(offset: int = 0):
 
-    data = test_file.monthly_cumulative_expenses(accs=['Credit ENBD', 'AED ENBD', 'Cash AED', 'Capital AED'],
-                                                     month_offset=offset)
+    data = test_file.monthly_cumulative_expenses(accs=AccGroup.AED,
+                                                 month_offset=offset)
 
     fig = plot_mom(data)
 
     # Return the PNG image as HTML
     png_output = yield_plot(fig)
     return Response(content=png_output.getvalue(), media_type="image/png")
+
+
+@app.get("/update")
+async def update_table():
+    """Updates postgres table from downloaded csv file and dumps DB to hard drive"""
+    df_folder = get_folder_table(expense_folder)
+    file_meta = search_file(df_folder, '.*expensemanager.csv')
+    file = File(id=file_meta['id'], name=file_meta['name'])
+    file.data.to_sql(name='current', con=pg_engine, schema=config.schema, if_exists='replace')
+
+    return PlainTextResponse(f"DB updated with file {file.name}")
 
 
 if __name__ == '__main__':

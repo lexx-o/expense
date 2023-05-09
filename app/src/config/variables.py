@@ -1,3 +1,5 @@
+from enum import Enum
+
 
 class Columns:
     DATE = 'Date'
@@ -9,3 +11,13 @@ class Columns:
     ACC = 'Account'
 
 
+class Accs(Enum):
+    ENBD = 'AED ENBD'
+    CREDIT_ENBD = 'Credit ENBD'
+    CASH = 'Cash AED'
+    CAPITAL = 'Capital AED'
+    ADVCLUB = 'AED AdvClub'
+
+
+class AccGroup(Enum):
+    AED = [Accs.ENBD, Accs.CREDIT_ENBD, Accs.CASH, Accs.CAPITAL, Accs.ADVCLUB]
