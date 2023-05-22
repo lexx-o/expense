@@ -8,7 +8,7 @@ import pandas as pd
 from drive import service
 from config import config
 from charts import *
-from processing import get_folder_table, search_file, File
+from processing import get_folder_table, search_file, monthly_cumulative_expenses
 from db.connector import pg_engine
 from config.variables import AccGroup
 
@@ -57,7 +57,7 @@ def test():
 @app.get("/chart")
 async def chart(offset: int = 0):
 
-    data = test_file.monthly_cumulative_expenses(accs=AccGroup.AED,
+    data = monthly_cumulative_expenses(file=testfile, accs=AccGroup.AED,
                                                  month_offset=offset)
 
     fig = plot_mom(data)
@@ -71,9 +71,11 @@ async def chart(offset: int = 0):
 async def update_table():
     """Updates postgres table from downloaded csv file and dumps DB to hard drive"""
     df_folder = get_folder_table(expense_folder)
-    file_meta = search_file(df_folder, '.*expensemanager.csv')
-    file = File(id=file_meta['id'], name=file_meta['name'])
-    file.data.to_sql(name='current', con=pg_engine, schema=config.schema, if_exists='replace')
+
+    for table in config.files:
+        file = search_file(df_folder, table['file'])
+        file.data.to_sql(name=table['table'], con=pg_engine, schema=config.schema, if_exists='replace')
+
 
     return PlainTextResponse(f"DB updated with file {file.name}")
 

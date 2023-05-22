@@ -11,9 +11,9 @@ if __name__ == '__main__':
 
     df_folder = get_folder_table(expense_folder)
 
-    trx_aed = search_file(df_folder, '.*aed.csv')
-    trx_nonaed = search_file(df_folder, '.*infrequent.csv')
-    trx_closed = search_file(df_folder, '.*closed.*.csv')
+    trx_aed = search_file(df_folder, config.files['current']['file'])
+    trx_nonaed = search_file(df_folder, config.files['other']['file'])
+    trx_closed = search_file(df_folder, config.files['closed']['file'])
 
     expenses = monthly_cumulative_expenses(file=trx_aed,
                                            accs=['Credit ENBD', 'AED ENBD', 'Cash AED', 'Capital AED'],
