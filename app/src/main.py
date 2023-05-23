@@ -1,16 +1,16 @@
 import logging
 import uvicorn
 
+import pandas as pd
 from fastapi import FastAPI
 from fastapi.responses import Response, PlainTextResponse
-import pandas as pd
 
-from drive import service
 from config import config
-from charts import *
-from processing import get_folder_table, search_file, monthly_cumulative_expenses
-from db.connector import pg_engine
 from config.variables import AccGroup
+from charts import *
+from processing import monthly_cumulative_expenses
+from driveio import get_file, get_folder_table, get_files_dict
+from db.connector import pg_engine
 
 
 logger = logging.getLogger(__name__)
@@ -28,37 +28,27 @@ def root():
 
 
 @app.get("/files")
-def get_files_dict() -> dict:
-
-    results = service.files().list(q=f"'{expense_folder}' in parents",
-                                   # pageSize=10,
-                                   fields="nextPageToken, "
-                                          "files(id, name, modifiedTime)"
-                                   ).execute()
-    items = results.get('files', [])
-
-    files_table = pd.DataFrame(items)
-
-    if 'modifiedTime' in files_table.columns:
-        files_table['modifiedTime'] = pd.to_datetime(files_table['modifiedTime'])
-
-    return files_table.to_dict()
+def get_files_dict_endpoint() -> dict:
+    return get_files_dict(expense_folder)
 
 
-@app.get("/test")
-def test():
-    # dump_schema(config.schema, pg_engine, dump_path=directories.root/'dump.sql')
-    # dump_db(pg_engine, config.schema)
-    # response = dump_db()
-
-    return PlainTextResponse('Test')
+# @app.get("/test")
+# def test():
+#     # dump_schema(config.schema, pg_engine, dump_path=directories.root/'dump.sql')
+#     # dump_db(pg_engine, config.schema)
+#     # response = dump_db()
+#
+#     return PlainTextResponse('Test')
 
 
 @app.get("/chart")
 async def chart(offset: int = 0):
+    table = pd.read_sql(sql=f"SELECT * FROM {config.schema}.current",
+                        con=pg_engine)
 
-    data = monthly_cumulative_expenses(file=testfile, accs=AccGroup.AED,
-                                                 month_offset=offset)
+    data = monthly_cumulative_expenses(data=table,
+                                       accs=AccGroup.AED,
+                                       month_offset=offset)
 
     fig = plot_mom(data)
 
@@ -72,12 +62,15 @@ async def update_table():
     """Updates postgres table from downloaded csv file and dumps DB to hard drive"""
     df_folder = get_folder_table(expense_folder)
 
-    for table in config.files:
-        file = search_file(df_folder, table['file'])
-        file.data.to_sql(name=table['table'], con=pg_engine, schema=config.schema, if_exists='replace')
+    for part in config.partitions:
+        partition = config.partitions[part]
+        filename = partition['file']
+        tablename = partition['table']
 
+        file = get_file(df_folder, filename)
+        file.data.to_sql(name=tablename, con=pg_engine, schema=config.schema, if_exists='replace')
 
-    return PlainTextResponse(f"DB updated with file {file.name}")
+    return PlainTextResponse(f"DB updated")
 
 
 if __name__ == '__main__':
