@@ -5,8 +5,9 @@ import pandas as pd
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 
-from app.src.config.variables import Columns
+from config.variables import Columns
 from drive import service
+from util import trim_date_and_remove_tz
 
 
 def _load_folder(folder: str, drive=service) -> list:
@@ -30,7 +31,7 @@ def get_folder_table(folder: str) -> pd.DataFrame:
     files_table = pd.DataFrame(_load_folder(folder=folder))
 
     if 'modifiedTime' in files_table.columns:
-        files_table['modifiedTime'] = pd.to_datetime(files_table['modifiedTime'])
+        files_table['modifiedTime'] = trim_date_and_remove_tz(files_table['modifiedTime'])
         files_table.sort_values(by='modifiedTime', ascending=False, inplace=True)
 
     return files_table
@@ -80,12 +81,11 @@ def _download_file(file_id: str, drive=service) -> io.BytesIO:
 class File:
 
     id: str
-    # modified: date
-
     name: str
+    modified: pd.Timestamp
 
     def _format_dataframe(self):
-        self.data[Columns.DATE] = pd.to_datetime(self.data[Columns.DATE])
+        self.data[Columns.DATE] = trim_date_and_remove_tz(self.data[Columns.DATE])
         self.data[Columns.AMOUNT].replace(to_replace='-', value='0', inplace=True)
         self.data[Columns.AMOUNT] = self.data[Columns.AMOUNT].astype('float')
 
@@ -108,6 +108,6 @@ def get_file(folder: pd.DataFrame, name: str) -> File:
     if filtered.shape[0] == 0:
         raise FileNotFoundError('File not found in Google Drive')
     file_metadata = filtered.sort_values(by='modifiedTime', ascending=False).iloc[0]
-    file = File(id=file_metadata['id'], name=file_metadata['name'])
+    file = File(id=file_metadata['id'], name=file_metadata['name'], modified=file_metadata['modifiedTime'])
 
     return file
