@@ -63,7 +63,7 @@ def get_latest_log(log: pd.DataFrame) -> pd.DataFrame:
     return modified_times
 
 
-def update_table(data: pd.DataFrame, table: Table, engine: Engine):
+def update_account_data_in_table(data: pd.DataFrame, table: Table, engine: Engine):
     """
     Updates table from a dataframe.
     Entries that have accounts found in the dataframe are cleared and then appended to the source table.

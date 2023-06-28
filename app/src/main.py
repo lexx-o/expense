@@ -1,7 +1,6 @@
 import logging
 import uvicorn
 
-import pandas as pd
 from fastapi import FastAPI
 from fastapi.responses import Response, PlainTextResponse
 
@@ -10,7 +9,7 @@ from config.variables import AccGroup
 from charts import *
 from processing import monthly_cumulative_expenses
 from driveio import get_file, get_folder_table, get_files_dict
-from dbio import read_table_update_log, write_table_update_log
+from dbio import Table, update_account_data_in_table
 from db.connector import pg_engine
 
 
@@ -18,6 +17,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 expense_folder = config.folders['expensemanager']
+master = Table(name='master', schema='public')
 
 
 app = FastAPI()
@@ -35,8 +35,7 @@ def get_files_dict_endpoint() -> dict:
 
 @app.get("/chart")
 async def chart(offset: int = 0):
-    table = pd.read_sql(sql=f"SELECT * FROM {config.schema}.current",
-                        con=pg_engine)
+    table = master.read(engine=pg_engine)
 
     data = monthly_cumulative_expenses(data=table,
                                        accs=AccGroup.AED,
@@ -55,38 +54,18 @@ def test():
 
 
 @app.get("/update")
-async def update_tables():
-    """Updates postgres tables from downloaded csv files"""
-    log = read_table_update_log(pg_engine)
-    modified = get_latest_log(log)
-
+async def upload_new_data(file: str):
+    """
+    Updates postgres tables from downloaded csv file.
+    Checks for account names present in the file and updates entries in the database for these accounts only.
+    """
     df_folder = get_folder_table(expense_folder)
+    file = get_file(df_folder, file)
+    df = file.data
 
-    updated_tables = []
-    for part in config.partitions:
-        file = get_file(df_folder, config.partitions[part]['file'])
-        table_timestamp_db = modified.loc[part, 'modified']
+    update_account_data_in_table(data=df, table=master, engine=pg_engine)
 
-        if file.modified <= table_timestamp_db:
-            pass
-        else:
-            tablename = config.partitions[part]['table']
-            file.data.to_sql(name=tablename,
-                             con=pg_engine,
-                             schema=config.schema,
-                             if_exists='replace')
-            write_table_update_log(partition=part, file=file, engine=pg_engine)
-            updated_tables.append(tablename)
-
-    return PlainTextResponse(f"DB update process finished. Tables updated with new data: {updated_tables}")
-
-
-def get_latest_log(log: pd.DataFrame) -> pd.DataFrame:
-    df = pd.DataFrame(index=config.partitions.keys())
-    latest = log.sort_values(by=['dttm'], ascending=False).groupby(by=['partition']).last()
-    modified_times = df.join(latest)
-    modified_times['modified'] = pd.to_datetime(modified_times['modified'])
-    return modified_times
+    return PlainTextResponse(f"DB update process finished. Table entries added/updated: {df.shape[0]}")
 
 
 if __name__ == '__main__':
