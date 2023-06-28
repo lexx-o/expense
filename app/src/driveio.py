@@ -106,7 +106,7 @@ def get_file(folder: pd.DataFrame, name: str) -> File:
 
     filtered = folder[folder['name'].str.contains(name)]
     if filtered.shape[0] == 0:
-        raise FileNotFoundError('File not found in Google Drive')
+        raise FileNotFoundError(f'No file with such mask found: {name}')
     file_metadata = filtered.sort_values(by='modifiedTime', ascending=False).iloc[0]
     file = File(id=file_metadata['id'], name=file_metadata['name'], modified=file_metadata['modifiedTime'])
 
