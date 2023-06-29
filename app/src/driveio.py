@@ -102,11 +102,18 @@ class File:
         return f'File ({self.name}, {self.id}, r/c: {self.data.shape})'
 
 
-def get_file(folder: pd.DataFrame, name: str) -> File:
+def get_file(folder: pd.DataFrame, name: str = None, id: str = None) -> File:
+    if id:
+        filtered = folder[folder['id'] == id]
+        if filtered.shape[0] == 0:
+            raise FileNotFoundError(f'No file with such id found: {id}')
+    elif name:
+        filtered = folder[folder['name'].str.contains(name)]
+        if filtered.shape[0] == 0:
+            raise FileNotFoundError(f'No file with such mask found: {name}')
+    else:
+        raise ValueError("You need to pass filename mask or file id")
 
-    filtered = folder[folder['name'].str.contains(name)]
-    if filtered.shape[0] == 0:
-        raise FileNotFoundError(f'No file with such mask found: {name}')
     file_metadata = filtered.sort_values(by='modifiedTime', ascending=False).iloc[0]
     file = File(id=file_metadata['id'], name=file_metadata['name'], modified=file_metadata['modifiedTime'])
 
