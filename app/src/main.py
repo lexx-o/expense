@@ -60,25 +60,34 @@ def test():
     return 'Test'
 
 
-@app.get("/update")
-async def upload_new_data(filename: str):
+@app.get("/file_upload", response_class=HTMLResponse)
+async def upload_new_data(request: Request, id: str):
     """
     Updates postgres tables from downloaded csv file.
     Checks for account names present in the file and updates entries in the database for these accounts only.
     """
-    df_folder = get_folder_table(expense_folder)
-    file = get_file(df_folder, filename)
+    folder = get_folder_table(expense_folder)
+    file = get_file(folder, id=id)
     df = file.data
 
     update_account_data_in_table(data=df, table=master, engine=pg_engine)
+    msg = f"DB update process finished. Table entries added/updated: {df.shape[0]}"
 
-    return PlainTextResponse(f"DB update process finished. Table entries added/updated: {df.shape[0]}")
-
-
-@app.get("/update_form", response_class=HTMLResponse)
-async def template_upload(request: Request):
+    # return PlainTextResponse(f"DB update process finished. Table entries added/updated: {df.shape[0]}")
     return templates.TemplateResponse("page.html", {"request": request,
-                                                    "pagename": "update_form"})
+                                                    "pagename": "db_updated",
+                                                    "message": msg,
+                                                    "folder": folder})
+
+
+@app.get("/update", response_class=HTMLResponse)
+async def template_upload(request: Request):
+
+    folder = get_folder_table(expense_folder)
+
+    return templates.TemplateResponse("page.html", {"request": request,
+                                                    "pagename": "update_form",
+                                                    "folder": folder})
 
 
 if __name__ == '__main__':
