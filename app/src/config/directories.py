@@ -6,6 +6,7 @@ class _Directories:
         self.root = Path(__file__).parents[2].resolve()
         self.config = self.root/'config'
         self.package = self.root/'src'
+        self.templates = self.root/'templates'
 
 
 directories = _Directories()

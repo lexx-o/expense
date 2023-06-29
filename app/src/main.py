@@ -1,10 +1,12 @@
 import logging
 import uvicorn
 
-from fastapi import FastAPI
-from fastapi.responses import Response, PlainTextResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import PlainTextResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
-from config import config
+from config import config, directories
 from config.variables import AccGroup
 from charts import *
 from processing import monthly_cumulative_expenses
@@ -23,9 +25,14 @@ master = Table(name='master', schema='public')
 app = FastAPI()
 
 
-@app.get("/")
-def root():
-    return {"message": "to be or not to be"}
+templates = Jinja2Templates(directory=directories.templates)
+app.mount('/static', StaticFiles(directory="static"), name="static")
+
+
+@app.get("/", response_class=HTMLResponse)
+def root(request: Request):
+    return templates.TemplateResponse("page.html", {"request": request,
+                                                    "pagename": "home"})
 
 
 @app.get("/files")
@@ -33,19 +40,19 @@ def get_files_dict_endpoint() -> dict:
     return get_files_dict(expense_folder)
 
 
-@app.get("/chart")
-async def chart(offset: int = 0):
+@app.get("/chart", response_class=HTMLResponse)
+async def chart(request: Request, offset: int = 0):
     table = master.read(engine=pg_engine)
+    table = table[table[Columns.ACC].isin(AccGroup.AED)]
 
-    data = monthly_cumulative_expenses(data=table,
-                                       accs=AccGroup.AED,
-                                       month_offset=offset)
+    data = monthly_cumulative_expenses(data=table, month_offset=offset)
 
     fig = plot_mom(data)
+    img_string = yield_plot(fig)
 
-    # Return the PNG image as HTML
-    png_output = yield_plot(fig)
-    return Response(content=png_output.getvalue(), media_type="image/png")
+    return templates.TemplateResponse("page.html", {"request": request,
+                                                    "pagename": "chart",
+                                                    "img_data": img_string})
 
 
 @app.get("/test")
@@ -54,18 +61,24 @@ def test():
 
 
 @app.get("/update")
-async def upload_new_data(file: str):
+async def upload_new_data(filename: str):
     """
     Updates postgres tables from downloaded csv file.
     Checks for account names present in the file and updates entries in the database for these accounts only.
     """
     df_folder = get_folder_table(expense_folder)
-    file = get_file(df_folder, file)
+    file = get_file(df_folder, filename)
     df = file.data
 
     update_account_data_in_table(data=df, table=master, engine=pg_engine)
 
     return PlainTextResponse(f"DB update process finished. Table entries added/updated: {df.shape[0]}")
+
+
+@app.get("/update_form", response_class=HTMLResponse)
+async def template_upload(request: Request):
+    return templates.TemplateResponse("page.html", {"request": request,
+                                                    "pagename": "update_form"})
 
 
 if __name__ == '__main__':
