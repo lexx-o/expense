@@ -1,5 +1,6 @@
-from io import BytesIO
+import base64
 import random
+from io import BytesIO
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -8,14 +9,20 @@ from matplotlib import pyplot as plt
 
 from config.variables import Columns
 
-def yield_plot(fig: Figure) -> BytesIO:
-
-    # Render the figure as a PNG image
+def yield_plot(fig: Figure) -> str:
+    """
+    Transforms a Figure object into base64 encoded string
+    Args:
+        fig: a Figure object
+    Returns: str bytes64 string
+    """
     canvas = FigureCanvas(fig)
     png_output = BytesIO()
     canvas.print_png(png_output)
 
-    return png_output
+    b64_stream = base64.b64encode(png_output.getvalue()).decode("utf-8")
+
+    return b64_stream
 
 
 def plot_mom(df):
