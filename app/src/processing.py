@@ -7,17 +7,16 @@ from config.variables import Columns, AccGroup
 pd.set_option('mode.chained_assignment', None)
 
 
-def monthly_cumulative_expenses(data, accs: AccGroup, month_offset=0):
-    df = data[data[Columns.ACC].isin(accs)]
+def monthly_cumulative_expenses(data, month_offset=0):
 
     start = date.today() + pd.tseries.offsets.MonthBegin(-2 + month_offset)
     end = min(date.today() + pd.tseries.offsets.MonthEnd(month_offset), pd.Timestamp(date.today()))
 
     grid = pd.DataFrame(pd.date_range(start, end), columns=[Columns.DATE])
 
-    df_expense = df[~df[Columns.CAT].isin(['Income', 'Account Transfer'])]
+    df_expense = data[~data[Columns.CAT].isin(['Income', 'Account Transfer'])]
     df_expense.dropna(subset=['Amount'], inplace=True)
-    df_expense[Columns.AMOUNT] = df[Columns.AMOUNT] * -1
+    df_expense[Columns.AMOUNT] = data[Columns.AMOUNT] * -1
 
     df_month = grid.merge(df_expense.groupby(Columns.DATE).sum()[Columns.AMOUNT].reset_index(),
                           on=['Date'], how='left')
