@@ -24,8 +24,12 @@ class Table:
                   index=False,
                   if_exists='replace')
 
-    def read(self, engine: Engine):
-        return pd.read_sql(sql=f"SELECT * FROM {self}", con=engine)
+    def read(self, engine: Engine, columns: list[str] = None):
+        if columns:
+            cols = ','.join(['"' + colname + '"' for colname in columns])
+        else:
+            cols = '*'
+        return pd.read_sql(sql=f"SELECT {cols} FROM {self}", con=engine)
 
 
 def write_table_update_log(*, partition: str, file: File, engine: Engine) -> None:
@@ -41,7 +45,7 @@ def write_table_update_log(*, partition: str, file: File, engine: Engine) -> Non
                                   'partition': [partition],
                                   'name': [file.name]
                                   })
-    log.to_sql(name='update_log', con=engine, schema=config.schema, if_exists='append', index=False)
+    log.to_sql(name='update_log', con=engine, schema=config.db.schema, if_exists='append', index=False)
 
 
 def read_table_update_log(engine: Engine) -> pd.DataFrame:
@@ -52,7 +56,7 @@ def read_table_update_log(engine: Engine) -> pd.DataFrame:
     Returns:
         DataFrame of update_log table
     """
-    return pd.read_sql(sql=f"SELECT * FROM {config.schema}.update_log", con=engine)
+    return pd.read_sql(sql=f"SELECT * FROM {config.db.schema}.update_log", con=engine)
 
 
 def get_latest_log(log: pd.DataFrame) -> pd.DataFrame:
@@ -68,15 +72,14 @@ def update_account_data_in_table(data: pd.DataFrame, table: Table, engine: Engin
     Updates table from a dataframe.
     Entries that have accounts found in the dataframe are cleared and then appended to the source table.
     """
-
-    target = Table(name='_temp_target', schema=config.schema)
+    target = Table(name='_temp_target', schema=config.db.schema)
     target.write(data, engine=engine)
 
 
     query = f"""
         begin;
     
-        create table {config.schema}._temp_result as
+        create table {config.db.schema}._temp_result as
         select * 
         from {table} as source
         where source.\"{Columns.ACC}\" NOT IN
@@ -86,13 +89,13 @@ def update_account_data_in_table(data: pd.DataFrame, table: Table, engine: Engin
             )
         union all
         select *
-        from {config.schema}._temp_target;
+        from {config.db.schema}._temp_target;
         
         alter table {table} rename to {table.name}_old;
-        alter table {config.schema}._temp_result rename to {table.name};
+        alter table {config.db.schema}._temp_result rename to {table.name};
         
         drop table {table}_old;
-        drop table {config.schema}._temp_target;
+        drop table {config.db.schema}._temp_target;
         
         commit;
     """
