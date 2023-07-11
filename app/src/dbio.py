@@ -6,6 +6,7 @@ from sqlalchemy import Engine, text
 from config import config
 from config.variables import Columns
 from driveio import File
+from db.connector import pg_engine
 
 
 @dataclass(frozen=True)
@@ -24,7 +25,7 @@ class Table:
                   index=False,
                   if_exists='replace')
 
-    def read(self, engine: Engine, columns: list[str] = None):
+    def read(self, engine: Engine = pg_engine, columns: list[str] = None):
         if columns:
             cols = ','.join(['"' + colname + '"' for colname in columns])
         else:
