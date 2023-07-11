@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from config import config, directories
 from config.variables import AccGroup
 from charts import *
-from processing import monthly_cumulative_expenses
+from processing import prepare_monthly_cumulative_expenses
 from driveio import get_file, get_folder_table, get_files_dict
 from dbio import Table, update_account_data_in_table
 from db.connector import pg_engine
@@ -42,12 +42,13 @@ def get_files_dict_endpoint() -> dict:
 
 @app.get("/chart", response_class=HTMLResponse)
 async def chart(request: Request, offset: int = 0):
-    table = master.read(engine=pg_engine)
+    table = master.read(engine=pg_engine, columns=[Columns.DATE, Columns.ACC, Columns.CAT, Columns.AMOUNT])
     table = table[table[Columns.ACC].isin(AccGroup.AED)]
+    table = table[~table[Columns.CAT].isin(['Income', 'Account Transfer'])]
 
-    data = monthly_cumulative_expenses(data=table, month_offset=offset)
+    data = prepare_monthly_cumulative_expenses(df_expense=table)
+    fig = plot_monthly_cumulative_expenses(data, offset=offset)
 
-    fig = plot_mom(data)
     img_string = yield_plot(fig)
 
     return templates.TemplateResponse("page.html", {"request": request,

@@ -2,34 +2,23 @@ from datetime import date
 
 import pandas as pd
 
-from config.variables import Columns, AccGroup
+from config.variables import Columns
 
 pd.set_option('mode.chained_assignment', None)
 
 
-def monthly_cumulative_expenses(data, month_offset=0):
+def prepare_monthly_cumulative_expenses(df_expense: pd.DataFrame) -> pd.DataFrame:
 
-    start = date.today() + pd.tseries.offsets.MonthBegin(-2 + month_offset)
-    end = min(date.today() + pd.tseries.offsets.MonthEnd(month_offset), pd.Timestamp(date.today()))
+    df_expenses_daily = df_expense.groupby(by=Columns.DATE).sum()[[Columns.AMOUNT]]
 
-    grid = pd.DataFrame(pd.date_range(start, end), columns=[Columns.DATE])
+    date_range = pd.date_range(df_expenses_daily.index.min(), df_expenses_daily.index.max())
+    df_expenses_daily = df_expenses_daily.reindex(date_range, fill_value=0)
 
-    df_expense = data[~data[Columns.CAT].isin(['Income', 'Account Transfer'])]
-    df_expense.dropna(subset=['Amount'], inplace=True)
-    df_expense[Columns.AMOUNT] = data[Columns.AMOUNT] * -1
+    df_expenses_daily[Columns.AMOUNT] *= -1
+    df_expenses_daily[Columns.DAY] = df_expenses_daily.index.day
 
-    df_month = grid.merge(df_expense.groupby(Columns.DATE).sum()[Columns.AMOUNT].reset_index(),
-                          on=['Date'], how='left')
-    df_month.fillna(0, inplace=True)
+    df_expenses_daily['_period_id'] = df_expenses_daily.index.month + df_expenses_daily.index.year * 12
+    df_expenses_daily['offset'] = df_expenses_daily['_period_id'] - (date.today().month + date.today().year * 12)
+    df_expenses_daily['runtot'] = df_expenses_daily[['offset', Columns.AMOUNT]].groupby('offset').cumsum()
 
-    df_month['month'] = df_month[Columns.DATE].dt.month
-    df_month['day'] = df_month[Columns.DATE].dt.day
-
-    df_month['runtot'] = df_month[['month', Columns.AMOUNT]].groupby('month').cumsum()
-
-    df_month.loc[df_month['month'] == end.month, 'period'] = 'current'
-    df_month.loc[df_month['month'] == start.month, 'period'] = 'previous'
-
-    return df_month
-
-
+    return df_expenses_daily[[Columns.DAY, 'offset', 'runtot']]

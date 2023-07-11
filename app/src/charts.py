@@ -2,12 +2,13 @@ import base64
 import random
 from io import BytesIO
 
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
-
+import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 from config.variables import Columns
+
 
 def yield_plot(fig: Figure) -> str:
     """
@@ -25,26 +26,27 @@ def yield_plot(fig: Figure) -> str:
     return b64_stream
 
 
-def plot_mom(df):
-    # Create a figure and plot the data
+def plot_monthly_cumulative_expenses(data: pd.DataFrame, offset: int = 0) -> plt.Figure:
+
+    df_slice = data[(data['offset'] - offset).isin([-1, 0])]
+
+    curr_period = df_slice.loc[df_slice['offset'] == df_slice['offset'].max()]
+    prev_period = df_slice.loc[df_slice['offset'] < df_slice['offset'].max()]
+
     fig = Figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlim(1, 31)
 
-    current = df.loc[df['period'] == 'current', ['day', 'runtot']]
-    ax.plot(current['day'], current['runtot'], c='r', lw=2, label='current')
+    ax.plot(curr_period[Columns.DAY], curr_period['runtot'], c='r', lw=2, label='current')
+    ax.plot(prev_period[Columns.DAY], prev_period['runtot'], c='grey', lw=1, ls=':', label='previous')
 
-    previous = df.loc[df['period'] == 'previous', ['day', 'runtot']]
-    ax.plot(previous['day'], previous['runtot'], c='grey', lw=1, ls=':', label='previous')
-
-    year = df.loc[df['period'] == 'current', Columns.DATE].dt.year.unique()[0]
-    month = df.loc[df['period'] == 'current', Columns.DATE].dt.month.unique()[0]
+    year = curr_period.index.year.unique()[0]
+    month = curr_period.index.month.unique()[0]
     fig.suptitle(f'Cumulative spend over {year}-{month}')
     ax.legend()
 
-    # plt.show()
-
     return fig
+
 
 def random_data():
     # Create some random data for the chart
