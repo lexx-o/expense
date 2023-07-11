@@ -18,7 +18,7 @@ class Table:
     def __str__(self):
         return f"{self.schema}.{self.name}"
 
-    def write(self, df: pd.DataFrame, engine: Engine):
+    def write(self, df: pd.DataFrame, engine: Engine = pg_engine):
         df.to_sql(name=self.name,
                   con=engine,
                   schema=self.schema,
