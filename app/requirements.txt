@@ -5,7 +5,9 @@ google-auth-oauthlib
 pandas
 fastapi
 uvicorn
-psycopg2
+psycopg2-binary
 matplotlib
 sqlalchemy
 jinja2
+dash
+omegaconf

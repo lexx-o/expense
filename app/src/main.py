@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.wsgi import WSGIMiddleware
 
 from config import config, directories
 from config.variables import AccGroup
@@ -15,18 +16,24 @@ from dbio import Table, update_account_data_in_table
 from db.connector import pg_engine
 
 
+from dash_callbacks import dash_app
+from dash_cumul_expense import dash_cumul
+
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-expense_folder = config.folders['expensemanager']
+expense_folder = config.folders.expensemanager
 master = Table(name='master', schema='public')
 
 
 app = FastAPI()
 
-
 templates = Jinja2Templates(directory=directories.templates)
 app.mount('/static', StaticFiles(directory="static"), name="static")
+
+app.mount("/dash2", WSGIMiddleware(dash_app.server))
+app.mount("/dash/chart/", WSGIMiddleware(dash_cumul.server))
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -56,9 +63,12 @@ async def chart(request: Request, offset: int = 0):
                                                     "img_data": img_string})
 
 
-@app.get("/test")
-def test():
-    return 'Test'
+@app.get("/dash", response_class=HTMLResponse)
+async def chart(request: Request):
+    return templates.TemplateResponse("page.html", {"request": request,
+                                                    "pagename": "dash",
+                                                    })
+
 
 
 @app.get("/file_upload", response_class=HTMLResponse)
@@ -91,6 +101,18 @@ async def template_upload(request: Request):
                                                     "folder": folder})
 
 
+# @app.get("/test")
+# def test():
+#     return 'Test'
+
+
+# @app.get("/dash")
+# def dash_chart():
+#     out = dash_barchart(dash_app)
+
+
+logger.info('STARTING SERVER')
+
+
 if __name__ == '__main__':
-    logger.info('STARTING SERVER')
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -21,4 +21,9 @@ def prepare_monthly_cumulative_expenses(df_expense: pd.DataFrame) -> pd.DataFram
     df_expenses_daily['offset'] = df_expenses_daily['_period_id'] - (date.today().month + date.today().year * 12)
     df_expenses_daily['runtot'] = df_expenses_daily[['offset', Columns.AMOUNT]].groupby('offset').cumsum()
 
-    return df_expenses_daily[[Columns.DAY, 'offset', 'runtot']]
+    df_expenses_daily['period'] = \
+        df_expenses_daily.index.year.astype(str) \
+        + "-" \
+        + df_expenses_daily.index.month.astype(str)
+
+    return df_expenses_daily[[Columns.DAY, 'period', 'offset', 'runtot']]
