@@ -60,33 +60,50 @@ def cumul_chart(slider_position):
 
     fig.update_layout(
         height=600,
-        minreducedwidth=500,
-        minreducedheight=500,
-        hovermode='x',
-        xaxis_range=(1, 31),
-        xaxis_fixedrange=True,
-        yaxis_fixedrange=True,
-        xaxis_zeroline=True,
-        xaxis_zerolinewidth=2,
-        xaxis_linecolor='black',
-        xaxis_showgrid=False,
-        xaxis_showspikes=True,
-        xaxis_spikethickness=2,
-        yaxis_dtick=10000,
         margin=dict(
             l=20,
             r=20,
-            b=50,
-            t=50,
+            b=20,
+            t=20,
             pad=4
-        )
+        ),
+        hovermode='x',
 
+        font=dict(
+            size=14,
+        ),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(210,210,210,0.8)',
+
+        # ranges and panning
+        xaxis_range=(0.5, 31.5),
+        xaxis_fixedrange=True,
+        yaxis_fixedrange=True,
+
+        # x-axis line
+        yaxis_zeroline=True,
+        yaxis_zerolinewidth=2,
+        yaxis_zerolinecolor='grey',
+
+        # gridlines
+        xaxis_showgrid=False,
+        xaxis_showspikes=True,
+        xaxis_spikethickness=2,
+        yaxis_dtick=5000,
+
+        # legend
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        )
     )
 
     fig.add_trace(go.Scatter(
         x=df_slice.loc[df_slice['period'] == 'current', Columns.DAY],
         y=df_slice.loc[df_slice['period'] == 'current', 'runtot'],
-        name='current',
+        name='current month',
         mode='lines+markers',
         line=dict(color='firebrick', width=3),
         hovertemplate=
@@ -96,12 +113,15 @@ def cumul_chart(slider_position):
     fig.add_trace(go.Scatter(
         x=df_slice.loc[df_slice['period'] == 'previous', Columns.DAY],
         y=df_slice.loc[df_slice['period'] == 'previous', 'runtot'],
-        name='previous',
+        name='previous month',
         mode='lines',
         line=dict(color='grey', width=2, dash='dot'),
         hovertemplate=
             # 'Day %{x}<br>' +
             '%{y:.0f}'
     ))
+    fig.add_shape(type='line', x0=0.5, x1=31, y0=20000, y1=20000, line=dict(color='red', width=0.5))
+    # fig.add_shape(type='rect', xref='paper', yref='paper', x0=0, x1=1, y0=0, y1=1, line=dict(color='black', width=1))
+
 
     return fig
