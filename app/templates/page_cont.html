@@ -3,7 +3,8 @@
 
     <h2>
     {% if pagename == "home" %} Main page
-    {% elif pagename == "chart" %} Spend info
+    {% elif pagename == "dash_monthly_expense" %} Monthly spend info
+    {% elif pagename == "dash_balance" %} Balance chart
     {% elif pagename == "update_form" %} Update data
     {% elif pagename == "dash" %} Spend info
     {% endif %}
@@ -40,16 +41,11 @@
          <h4>Success!</h4>
          <text>{{ message }}</text>
 
-    {% elif pagename == "dash" %}
-         <style "text/css">
-            iframe {
-            width: 100%;
-            height: 800px;
-            max-width: 1200px;
-            min-width: 600px;
-            }
-        </style>
-         <iframe src="/dash/chart" width="1000" height="800">
+    {% elif pagename == "dash_monthly_expense" %}
+         <iframe class="dash-chart" src="/dash/monthly_expense" width="1000" height="800">
+
+     {% elif pagename == "dash_balance" %}
+         <iframe class="dash-chart" src="/dash/balance" width="1000" height="800">
 
     {% endif %}
 </div>

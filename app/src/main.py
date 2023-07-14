@@ -16,8 +16,9 @@ from dbio import Table, update_account_data_in_table
 from db.connector import pg_engine
 
 
+from dash_monthly_expense import dash_monthly_expense_app
+from dash_balance import dash_balance_app
 from dash_callbacks import dash_app
-from dash_cumul_expense import dash_cumul
 
 
 logger = logging.getLogger(__name__)
@@ -32,8 +33,9 @@ app = FastAPI()
 templates = Jinja2Templates(directory=directories.templates)
 app.mount('/static', StaticFiles(directory="static"), name="static")
 
-app.mount("/dash2", WSGIMiddleware(dash_app.server))
-app.mount("/dash/chart/", WSGIMiddleware(dash_cumul.server))
+app.mount("/dash/example/", WSGIMiddleware(dash_app.server))
+app.mount("/dash/monthly_expense/", WSGIMiddleware(dash_monthly_expense_app.server))
+app.mount("/dash/balance/", WSGIMiddleware(dash_balance_app.server))
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -48,19 +50,33 @@ def get_files_dict_endpoint() -> dict:
 
 
 @app.get("/chart", response_class=HTMLResponse)
-async def chart(request: Request, offset: int = 0):
-    table = master.read(engine=pg_engine, columns=[Columns.DATE, Columns.ACC, Columns.CAT, Columns.AMOUNT])
-    table = table[table[Columns.ACC].isin(AccGroup.AED)]
-    table = table[~table[Columns.CAT].isin(['Income', 'Account Transfer'])]
-
-    data = prepare_monthly_cumulative_expenses(df_expense=table)
-    fig = plot_monthly_cumulative_expenses(data, offset=offset)
-
-    img_string = yield_plot(fig)
-
+async def chart(request: Request):
     return templates.TemplateResponse("page.html", {"request": request,
-                                                    "pagename": "chart",
-                                                    "img_data": img_string})
+                                                    "pagename": "dash_monthly_expense",
+                                                    })
+
+
+@app.get("/chart2", response_class=HTMLResponse)
+async def chart(request: Request):
+    return templates.TemplateResponse("page.html", {"request": request,
+                                                    "pagename": "dash_balance",
+                                                    })
+
+
+# @app.get("/chart_old", response_class=HTMLResponse)
+# async def chart_old(request: Request, offset: int = 0):
+#     table = master.read(engine=pg_engine, columns=[Columns.DATE, Columns.ACC, Columns.CAT, Columns.AMOUNT])
+#     table = table[table[Columns.ACC].isin(AccGroup.AED)]
+#     table = table[~table[Columns.CAT].isin(['Income', 'Account Transfer'])]
+#
+#     data = prepare_monthly_cumulative_expenses(df_expense=table)
+#     fig = plot_monthly_cumulative_expenses(data, offset=offset)
+#
+#     img_string = yield_plot(fig)
+#
+#     return templates.TemplateResponse("page.html", {"request": request,
+#                                                     "pagename": "chart",
+#                                                     "img_data": img_string})
 
 
 @app.get("/dash", response_class=HTMLResponse)

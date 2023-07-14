@@ -43,19 +43,27 @@
         </a>
       </li>
       <li class="nav-item">
-        {% if pagename == "chart" %} <a href="#" class="nav-link active" aria-current="page">
+        {% if pagename == "dash_monthly_expense" %} <a href="#" class="nav-link active" aria-current="page">
         {% else %} <a href="/chart" class="nav-link text-white">
         {% endif %}
           <svg class="bi pe-none me-2" width="16" height="16"><use href="#speedometer2"></svg>
-          Chart
+          Monthly spend
         </a>
       </li>
       <li class="nav-item">
-        <a href="/dash" class="nav-link text-white">
-          <svg class="bi pe-none me-2" width="16" height="16"><use href="#dash"></svg>
-          Dash
+        {% if pagename == "dash_balance" %} <a href="#" class="nav-link active" aria-current="page">
+        {% else %} <a href="/chart2" class="nav-link text-white">
+        {% endif %}
+          <svg class="bi pe-none me-2" width="16" height="16"><use href="#table"></svg>
+          Balance
         </a>
       </li>
+<!--      <li class="nav-item">-->
+<!--        <a href="/dash" class="nav-link text-white">-->
+<!--          <svg class="bi pe-none me-2" width="16" height="16"><use href="#dash"></svg>-->
+<!--          Dash-->
+<!--        </a>-->
+<!--      </li>-->
       <li class="nav-item">
         {% if pagename == "update_form" %} <a href="#" class="nav-link active" aria-current="page">
         {% else %} <a href="/update" class="nav-link text-white">

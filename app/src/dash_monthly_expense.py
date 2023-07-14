@@ -6,25 +6,14 @@ from dbio import Table
 from processing import prepare_monthly_cumulative_expenses
 
 
-dash_cumul = Dash(__name__, requests_pathname_prefix="/dash/chart/")
+dash_monthly_expense_app = Dash(__name__, requests_pathname_prefix="/dash/monthly_expense/")
 
 
 master = Table(name='master', schema='public')
-df_raw = master.read(columns=[Columns.DATE, Columns.ACC, Columns.CAT, Columns.AMOUNT])
-df_raw = df_raw[df_raw[Columns.ACC].isin(AccGroup.AED)]
-df_raw = df_raw[~df_raw[Columns.CAT].isin(['Income', 'Account Transfer'])]
-
-data = prepare_monthly_cumulative_expenses(df_expense=df_raw)
+data = prepare_monthly_cumulative_expenses(master)
 
 periods = data['period'].drop_duplicates().sort_index().values
 marks_dict = {key: period for key, period in enumerate(periods)}
-
-
-dropdown = dcc.Dropdown(
-    id='dropdown',
-    options=data['period'].drop_duplicates().sort_values().values,
-    value=0,
-)
 
 
 slider = dcc.Slider(
@@ -36,7 +25,7 @@ slider = dcc.Slider(
 )
 
 
-dash_cumul.layout = html.Div(
+dash_monthly_expense_app.layout = html.Div(
     children=[
         dcc.Graph(id='cumul-chart'),
         slider,
@@ -44,7 +33,7 @@ dash_cumul.layout = html.Div(
 )
 
 
-@dash_cumul.callback(
+@dash_monthly_expense_app.callback(
     Output('cumul-chart', 'figure'),
     Input('slider', 'value')
 )
