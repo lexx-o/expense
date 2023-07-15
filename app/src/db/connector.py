@@ -14,3 +14,10 @@ pg_engine = create_pg_engine(
                     db="postgres",
                     user="postgres",
                     passwd="pg_pass")
+
+pg_external = create_pg_engine(
+                    host="localhost",
+                    port="54320",
+                    db="postgres",
+                    user="postgres",
+                    passwd="pg_pass")
