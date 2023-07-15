@@ -1,43 +1,49 @@
 from dash import Dash, dcc, html, Input, Output
 import plotly.graph_objects as go
 
-from config.variables import Columns, AccGroup
+from config.variables import Columns
 from dbio import Table
 from processing import prepare_monthly_cumulative_expenses
 
 
 dash_monthly_expense_app = Dash(__name__, requests_pathname_prefix="/dash/monthly_expense/")
 
-
 master = Table(name='master', schema='public')
-data = prepare_monthly_cumulative_expenses(master)
-
-periods = data['period'].drop_duplicates().sort_index().values
-marks_dict = {key: period for key, period in enumerate(periods)}
 
 
-slider = dcc.Slider(
-    id='slider',
-    value=max(marks_dict.keys()),
-    marks=marks_dict,
-    step=None,
-    included=False,
-)
+def _serve_layout():
+    global data
+    data = prepare_monthly_cumulative_expenses(master)
+
+    periods = data['period'].drop_duplicates().sort_index().values
+
+    global marks_dict
+    marks_dict = {key: period for key, period in enumerate(periods)}
+
+    slider = dcc.Slider(
+        id='slider',
+        value=max(marks_dict.keys()),
+        marks=marks_dict,
+        step=None,
+        included=False,
+    )
+
+    return html.Div(
+        children=[
+            dcc.Graph(id='monthly-exp-chart'),
+            slider,
+        ]
+    )
 
 
-dash_monthly_expense_app.layout = html.Div(
-    children=[
-        dcc.Graph(id='cumul-chart'),
-        slider,
-    ]
-)
+dash_monthly_expense_app.layout = _serve_layout
 
 
 @dash_monthly_expense_app.callback(
-    Output('cumul-chart', 'figure'),
+    Output('monthly-exp-chart', 'figure'),
     Input('slider', 'value')
 )
-def cumul_chart(slider_position):
+def dash_plot_monthly_expense(slider_position):
     # slider only accepts positive marks
     offset_value = slider_position - max(marks_dict.keys())
     df_slice = data[(data['offset'] - offset_value).isin([-1, 0])]
@@ -111,6 +117,5 @@ def cumul_chart(slider_position):
     ))
     fig.add_shape(type='line', x0=0.5, x1=31, y0=20000, y1=20000, line=dict(color='red', width=0.5))
     # fig.add_shape(type='rect', xref='paper', yref='paper', x0=0, x1=1, y0=0, y1=1, line=dict(color='black', width=1))
-
 
     return fig

@@ -2,34 +2,48 @@ import pandas as pd
 from dash import Dash, dcc, html, Input, Output
 import plotly.graph_objects as go
 
-from config.variables import Columns, AccGroup
+from config.variables import Columns
 from dbio import Table
 from processing import prepare_balance_table
 
 dash_balance_app = Dash(__name__, requests_pathname_prefix="/dash/balance/")
 
 master = Table(name='master', schema='public')
-data = prepare_balance_table(master)
-
-date_range = pd.date_range(start=data[Columns.DATE].min(), end=data[Columns.DATE].max())
-date_range_df = pd.DataFrame(date_range)
 
 
-marks_dict = {n: date.strftime('%Y-%m') for n, date in zip(date_range_df.index, date_range_df[0]) if date.day == 1}
+def _serve_layout():
+    global data
+    data = prepare_balance_table(master)
+
+    date_range = pd.date_range(start=data[Columns.DATE].min(), end=data[Columns.DATE].max())
+
+    global date_range_df
+    date_range_df = pd.DataFrame(date_range)
+
+    marks_dict = {n: date.strftime('%Y-%m') for n, date in zip(date_range_df.index, date_range_df[0]) if date.day == 1}
+
+    slider = dcc.RangeSlider(
+        id='slider',
+        min=date_range_df.index.min(),
+        max=date_range_df.index.max(),
+
+        value=[max(0, date_range_df.index.max() - 31), date_range_df.index.max()],
+        marks=marks_dict,
+        step=1,
+        # tooltip={"placement": "bottom", "always_visible": True},
+        # included=False,
+    )
+
+    return html.Div(
+        children=[
+            html.Div(id='textbox'),
+            dcc.Graph(id='balance-chart'),
+            slider,
+        ]
+    )
 
 
-slider = dcc.RangeSlider(
-    id='slider',
-    min=date_range_df.index.min(),
-    max=date_range_df.index.max(),
-
-
-    value=[max(0, date_range_df.index.max() - 31), date_range_df.index.max()],
-    marks=marks_dict,
-    step=1,
-    # tooltip={"placement": "bottom", "always_visible": True},
-    # included=False,
-)
+dash_balance_app.layout = _serve_layout
 
 
 @dash_balance_app.callback(
@@ -40,8 +54,6 @@ slider = dcc.RangeSlider(
 def plot_balance_chart(selection):
 
     fig = go.Figure()
-
-
 
     date_min = date_range_df.loc[selection[0], 0]
     date_max = date_range_df.loc[selection[1], 0]
@@ -61,9 +73,9 @@ def plot_balance_chart(selection):
             line=dict(width=1, shape='hvh'),
             fill='tozeroy' if i == 0 else 'tonexty',
             stackgroup='one',
-            # hovertemplate=
+            hovertemplate=
             # 'Day %{x}<br>' +
-            # '<b>%{y:.0f}</b>'
+            '<b>%{y:,.2f}</b>'
         ))
 
     yrange_min = max(0, df.loc[df[Columns.ACC] == 'AED ENBD', 'Balance'].min() - 5000)
@@ -108,12 +120,3 @@ def plot_balance_chart(selection):
         )
 
     return fig
-
-
-dash_balance_app.layout = html.Div(
-    children=[
-        html.Div(id='textbox'),
-        dcc.Graph(id='balance-chart'),
-        slider,
-    ]
-)
