@@ -12,13 +12,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 expense_folder = config.folders.expensemanager
-master = Table(name='master', schema='public')
-
+master_table = Table(name='master', schema='public')
 
 app = FastAPI()
-
-
-master_table = Table(name='master', schema='public')
 
 
 @app.get("/")
@@ -61,7 +57,7 @@ def update_db_with_file(id: str) -> dict:
             id: file id on Google Drive"""
     folder = get_folder_table(expense_folder)
     file = get_file(folder, id=id)
-    update_account_data_in_table(data=file.data, table=master)
+    update_account_data_in_table(data=file.data, table=master_table)
     return {'status': 'success',
             'id': id,
             'filename': file.name,
@@ -69,8 +65,6 @@ def update_db_with_file(id: str) -> dict:
             }
 
 
-logger.info('STARTING SERVER')
-
-
 if __name__ == '__main__':
+    logger.info('STARTING SERVER')
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
