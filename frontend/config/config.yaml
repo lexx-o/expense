@@ -1,0 +1,9 @@
+db:
+  schema: public
+schema:
+  date: Date
+  amount: Amount
+  lvl1: Category
+  lvl2: Subcategory
+  account: Account
+  text: Description

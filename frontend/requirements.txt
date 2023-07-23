@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+omegaconf
+pandas
+jinja2
+dash
