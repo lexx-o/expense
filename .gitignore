@@ -1,5 +1,11 @@
 /.idea/
 /venv/
-/app/config/
-/db/
 **/*.sql
+
+/app/config/
+/app/src/.pytest_cache/
+/app/src/run_test.py
+
+/frontend/config/
+
+/db/

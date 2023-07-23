@@ -33,7 +33,7 @@ class Table:
         return pd.read_sql(sql=f"SELECT {cols} FROM {self}", con=engine)
 
 
-def write_table_update_log(*, partition: str, file: File, engine: Engine) -> None:
+def write_table_update_log(*, partition: str, file: File, engine: Engine = pg_engine) -> None:
     """
     Writes to table of expense partition table update log.
     Args:
@@ -49,7 +49,7 @@ def write_table_update_log(*, partition: str, file: File, engine: Engine) -> Non
     log.to_sql(name='update_log', con=engine, schema=config.db.schema, if_exists='append', index=False)
 
 
-def read_table_update_log(engine: Engine) -> pd.DataFrame:
+def read_table_update_log(engine: Engine = pg_engine) -> pd.DataFrame:
     """
     Reads table of expense partition table update log.
     Args:
@@ -68,14 +68,13 @@ def get_latest_log(log: pd.DataFrame) -> pd.DataFrame:
     return modified_times
 
 
-def update_account_data_in_table(data: pd.DataFrame, table: Table, engine: Engine):
+def update_account_data_in_table(data: pd.DataFrame, table: Table, engine: Engine = pg_engine):
     """
     Updates table from a dataframe.
     Entries that have accounts found in the dataframe are cleared and then appended to the source table.
     """
     target = Table(name='_temp_target', schema=config.db.schema)
     target.write(data, engine=engine)
-
 
     query = f"""
         begin;

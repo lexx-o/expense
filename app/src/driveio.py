@@ -37,23 +37,6 @@ def get_folder_table(folder: str) -> pd.DataFrame:
     return files_table
 
 
-def get_files_dict(folder) -> dict:
-
-    results = service.files().list(q=f"'{folder}' in parents",
-                                   # pageSize=10,
-                                   fields="nextPageToken, "
-                                          "files(id, name, modifiedTime)"
-                                   ).execute()
-    items = results.get('files', [])
-
-    files_table = pd.DataFrame(items)
-
-    if 'modifiedTime' in files_table.columns:
-        files_table['modifiedTime'] = pd.to_datetime(files_table['modifiedTime'])
-
-    return files_table.to_dict()
-
-
 def _download_file(file_id: str, drive=service) -> io.BytesIO:
     """
     Args:
