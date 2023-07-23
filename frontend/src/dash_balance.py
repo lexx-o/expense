@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output
 
-from config.variables import Columns
+from config.variables import Columns, AccGroup, Accs
 from util import df_from_endpoint
 
 
@@ -61,7 +61,8 @@ def plot_balance_chart(selection):
 
     df = data[mask]
 
-    accs = df[Columns.ACC].unique()
+    list_accs = df[Columns.ACC].unique()
+    accs = [account for account in AccGroup.AED if account in list_accs]
     for i, acc in enumerate(accs):
         acc_df = df[df[Columns.ACC] == acc]
         fig.add_trace(go.Scatter(
@@ -69,7 +70,8 @@ def plot_balance_chart(selection):
             y=acc_df['Balance'],
             name=acc,
             mode='lines',
-            line=dict(width=1, shape='hvh'),
+            line=dict(width=2 if acc == Accs.CREDIT_ENBD else 0.5,
+                      shape='hvh'),
             fill='tozeroy' if i == 0 else 'tonexty',
             stackgroup='one',
             hovertemplate=
