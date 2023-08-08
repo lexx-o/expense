@@ -14,6 +14,10 @@ def prepare_monthly_cumulative_expenses(table: Table) -> pd.DataFrame:
     df_raw = df_raw[df_raw[Columns.ACC].isin(AccGroup.AED)]
     df_raw = df_raw[~df_raw[Columns.CAT].isin(['Income', 'Account Transfer'])]
 
+    if df_raw.shape[0] == 0:
+        df_expenses_daily = pd.DataFrame(columns=[Columns.DAY, 'period', 'offset', 'runtot'])
+        return df_expenses_daily
+
     df_expenses_daily = df_raw.groupby(by=Columns.DATE).sum()[[Columns.AMOUNT]]
 
     date_range = pd.date_range(df_expenses_daily.index.min(), df_expenses_daily.index.max())
@@ -23,7 +27,8 @@ def prepare_monthly_cumulative_expenses(table: Table) -> pd.DataFrame:
     df_expenses_daily[Columns.DAY] = df_expenses_daily.index.day
 
     df_expenses_daily['_period_id'] = df_expenses_daily.index.month + df_expenses_daily.index.year * 12
-    df_expenses_daily['offset'] = df_expenses_daily['_period_id'] - (date.today().month + date.today().year * 12)
+    df_expenses_daily['offset'] = df_expenses_daily['_period_id'] - \
+        (df_expenses_daily.index.max().month + df_expenses_daily.index.max().year * 12)
     df_expenses_daily['runtot'] = df_expenses_daily[['offset', Columns.AMOUNT]].groupby('offset').cumsum()
 
     df_expenses_daily['period'] = \
