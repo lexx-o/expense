@@ -1,30 +1,31 @@
-import pandas as pd
 import requests
+from requests.exceptions import ConnectionError
 import json
 
 
-def df_from_endpoint(url: str) -> pd.DataFrame:
+def request_from_endpoint(url: str) -> dict:
     """
-    Returns DataFrame from dict, yielded from backend endpoint
-    Args:
-        url: endpoint URL
-
-    Returns:
-        pd.DataFrame
-    """
-    resp = requests.get(url)
-    df = pd.read_json(resp.content.decode('utf-8'))
-    return df
-
-
-def data_from_endpoint(url: str):
-    """
-        Returns payload from backend endpoint
+        Returns a dict with
+        from dict, yielded from backend endpoint
         Args:
             url: endpoint URL
+
         Returns:
-            pd.DataFrame
+            dict:
+                status: [0, 1] 0 if status code 200, 1 in all other cases
+                data: [dict] payload string if status code 200, error message in other cases
         """
-    resp = requests.get(url)
-    data_string = resp.content.decode('utf-8')
-    return json.loads(data_string)
+    try:
+        resp = requests.get(url)
+    except ConnectionError as e:
+        return {"status": 1,
+                "data": {"message": f"Error: {e}"}
+                }
+
+    if resp.status_code == 200:
+        return {"status": 0,
+                "data": json.loads(resp.content.decode('utf-8'))}
+    else:
+        return {"status": 1,
+                "data": {"message": f"Status code {resp.status_code}"}
+                }

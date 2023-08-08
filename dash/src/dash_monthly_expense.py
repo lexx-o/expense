@@ -2,22 +2,29 @@ import pandas as pd
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output
 
+from config import config
 from config.variables import Columns
-from util import df_from_endpoint
+from util import request_from_endpoint
 
-
-dash_monthly_expense_app = Dash(__name__, requests_pathname_prefix="/dash/monthly_expense/")
+backend = config.app.backend
+dash_monthly_expense_app = Dash(__name__, requests_pathname_prefix="/monthly_expense/")
 
 
 def _serve_layout():
 
     global data
-    data = df_from_endpoint("http://backend:8000/monthly-expense-table")
-
-    periods = data['period'].drop_duplicates().sort_index().values
-
     global marks_dict
-    marks_dict = {key: period for key, period in enumerate(periods)}
+
+    url = f"http://{backend.name}:{backend.port}/monthly-expense-table"
+    resp = request_from_endpoint(url)
+
+    if resp['status'] == 0:
+        data = pd.DataFrame(resp['data'])
+
+        periods = data['period'].drop_duplicates().sort_index().values
+        marks_dict = {key: period for key, period in enumerate(periods)}
+    else:
+        marks_dict = {0: 0}
 
     slider = dcc.Slider(
         id='slider',

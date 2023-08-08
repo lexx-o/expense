@@ -15,34 +15,43 @@
         {% include 'lorem_ipsum.html' %}
 
     {% elif pagename == "dash_monthly_expense" %}
-         <iframe class="dash-chart" src="/dash/monthly_expense" width="1000" height="800">
+        <iframe class="dash-chart" src="{{ dash_url }}" width="1000" height="800">
 
      {% elif pagename == "dash_balance" %}
-         <iframe class="dash-chart" src="/dash/balance" width="1000" height="800">
+        <iframe class="dash-chart" src="{{ dash_url }}" width="1000" height="800">
 
     {% elif pagename == "update_form" %}
-        <br>
-        <h4>Choose file to update the table</h4>
-        <table class="table table-striped" style="max-width: 600px;">
-             <thead>
-               <tr>
-                <th>#</th>
-                <th>Filename</th>
-                <th>Modified</th>
-               </tr>
-             </thead>
-             {% for key,value in folder.iterrows() %}
-                <tr>
-                    <td>{{ key }}</td>
-                    <td><a href="/file_upload?id={{ value['id'] }}">{{ value['name'] }}</a></td>
-                    <td>{{ value['modifiedTime'] }}</td>
-                </tr>
-             {% endfor %}
-        </table>
+        {% if status == 0 %}
+            <br>
+            <h4>Choose file to update the table</h4>
+            <table class="table table-striped" style="max-width: 600px;">
+                 <thead>
+                   <tr>
+                    <th>#</th>
+                    <th>Filename</th>
+                    <th>Modified</th>
+                   </tr>
+                 </thead>
+                 {% for key,value in folder.iterrows() %}
+                    <tr>
+                        <td>{{ key }}</td>
+                        <td><a href="/file_upload?id={{ value['id'] }}">{{ value['name'] }}</a></td>
+                        <td>{{ value['modifiedTime'] }}</td>
+                    </tr>
+                 {% endfor %}
+            </table>
+        {% else %}
+             <br>
+             <h4>No connection to backend{{status}}</h4>
+        {% endif %}
 
     {% elif pagename == "db_updated" %}
-         <h4>Success!</h4>
-         <text>{{ message }}</text>
+        {% if status == 0 %}
+            <h4>Success!</h4>
+        {% else %}
+            <h4>Error</h4>
+        {% endif %}
+            <text>{{ message }}</text>
 
     {% endif %}
 </div>

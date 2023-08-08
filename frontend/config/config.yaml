@@ -1,9 +1,7 @@
-db:
-  schema: public
-schema:
-  date: Date
-  amount: Amount
-  lvl1: Category
-  lvl2: Subcategory
-  account: Account
-  text: Description
+app:
+  backend:
+    name: expense-backend
+    port: 8000
+  dash:
+    name: localhost
+    port: 8001

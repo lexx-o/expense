@@ -2,36 +2,46 @@ import pandas as pd
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output
 
+from config import config
 from config.variables import Columns, AccGroup, Accs
-from util import df_from_endpoint
+from util import request_from_endpoint, trim_date_and_remove_tz
 
 
-dash_balance_app = Dash(__name__, requests_pathname_prefix="/dash/balance/")
+backend = config.app.backend
+dash_balance_app = Dash(__name__, requests_pathname_prefix="/balance/")
 
 
 def _serve_layout():
 
     global data
-    data = df_from_endpoint("http://backend:8000/balance-table")
-
-    date_range = pd.date_range(start=data[Columns.DATE].min(), end=data[Columns.DATE].max())
-
     global date_range_df
-    date_range_df = pd.DataFrame(date_range)
 
-    marks_dict = {n: date.strftime('%Y-%m') for n, date in zip(date_range_df.index, date_range_df[0]) if date.day == 1}
+    url = f"http://{backend.name}:{backend.port}/balance-table"
+    resp = request_from_endpoint(url)
 
-    slider = dcc.RangeSlider(
-        id='slider',
-        min=date_range_df.index.min(),
-        max=date_range_df.index.max(),
+    if resp['status'] == 0:
+        data = pd.DataFrame(resp['data'])
+        data[Columns.DATE] = trim_date_and_remove_tz(data[Columns.DATE])
 
-        value=[max(0, date_range_df.index.max() - 31), date_range_df.index.max()],
-        marks=marks_dict,
-        step=1,
-        # tooltip={"placement": "bottom", "always_visible": True},
-        # included=False,
-    )
+        date_range = pd.date_range(start=data[Columns.DATE].min(), end=data[Columns.DATE].max())
+        date_range_df = pd.DataFrame(date_range)
+        marks_dict = {n: date.strftime('%Y-%m') for n, date in zip(date_range_df.index, date_range_df[0]) if date.day == 1}
+
+        slider = dcc.RangeSlider(
+            id='slider',
+            min=date_range_df.index.min(),
+            max=date_range_df.index.max(),
+
+            value=[max(0, date_range_df.index.max() - 31), date_range_df.index.max()],
+            marks=marks_dict,
+            step=1,
+            # tooltip={"placement": "bottom", "always_visible": True},
+            # included=False,
+        )
+
+    else:
+        slider = dcc.RangeSlider(
+            id='slider')
 
     return html.Div(
         children=[
