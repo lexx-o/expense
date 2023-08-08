@@ -9,7 +9,7 @@ def create_pg_engine(host: str, port: str, db: str, user: str, passwd: str) -> s
 
 
 pg_engine = create_pg_engine(
-                    host="postgres-db",
+                    host="expense-db",
                     port="5432",
                     db="postgres",
                     user="postgres",
