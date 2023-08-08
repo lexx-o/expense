@@ -20,7 +20,8 @@ app = FastAPI()
 @app.get("/")
 def root() -> dict:
     """No functionality implemented on root"""
-    return {'status': 'healthy'}
+    return {'name': 'backend',
+            'status': 'healthy'}
 
 
 @app.get("/test")
