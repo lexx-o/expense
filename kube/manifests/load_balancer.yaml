@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: expense-db-expose
+spec:
+  selector:
+    app: expense-db
+  ports:
+    - protocol: TCP
+      port: 8543
+      targetPort: 5432
+  type: LoadBalancer
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: expense-backend-expose
+spec:
+  selector:
+    app: expense-backend
+  ports:
+    - protocol: TCP
+      port: 8555
+      targetPort: 8000
+  type: LoadBalancer
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: expense-frontend-expose
+spec:
+  selector:
+    app: expense-frontend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: LoadBalancer

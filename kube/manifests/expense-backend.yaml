@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expense-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: expense-backend
+  template:
+    metadata:
+      labels:
+        app: expense-backend
+    spec:
+      volumes:
+        - name: expense-backend-data
+          hostPath:
+            path: /run/desktop/mnt/host/d/Projects/DriveReader/app
+      containers:
+      - name: expense-container-backend
+        image: lexxo/test:backend
+        command: ["python"]
+        args: ["/project/src/main.py"]
+        ports:
+          - containerPort: 8000
+        volumeMounts:
+          - name: expense-backend-data
+            mountPath: /project
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: expense-backend
+spec:
+  selector:
+    app: expense-backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

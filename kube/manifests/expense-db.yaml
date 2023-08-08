@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expense-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: expense-db
+  template:
+    metadata:
+      labels:
+        app: expense-db
+    spec:
+      volumes:
+        - name: expense-db-init
+          hostPath:
+            path: /run/desktop/mnt/host/d/Projects/DriveReader/db/init
+        - name: expense-db-data
+          persistentVolumeClaim:
+            claimName: expense-postgres-data-pvc
+      containers:
+      - name: postgres
+        image: postgres
+        ports:
+          - containerPort: 5432
+        env: 
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: pg_pass
+            - name: POSTGRES_DB
+              value: postgres
+        volumeMounts:
+          - name: expense-db-init
+            mountPath: /docker-entrypoint-initdb.d
+          - name: expense-db-data
+            mountPath: /var/lib/postgresql/data
+            
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: expense-db
+spec:
+  selector:
+    app: expense-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expense-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: expense-frontend
+  template:
+    metadata:
+      labels:
+        app: expense-frontend
+    spec:
+      volumes:
+        - name: expense-frontend-data
+          hostPath:
+            path: /run/desktop/mnt/host/d/Projects/DriveReader/frontend
+      containers:
+      - name: expense-container-frontend
+        image: lexxo/test:frontend
+        workingDir: /project
+        command: ["python"]
+        args: ["src/main.py"]
+        ports:
+          - containerPort: 8000
+        volumeMounts:
+          - name: expense-frontend-data
+            mountPath: /project
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: expense-frontend
+spec:
+  selector:
+    app: expense-frontend
+  ports:
+    - protocol: TCP
+      port: 8333
+      targetPort: 8000
