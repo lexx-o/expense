@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from config import config
 
 
@@ -24,8 +25,9 @@ class Accs:
     CAPITAL = 'Capital AED'
     ADVCLUB = 'AED AdvClub'
     AED_AR = 'Nadya - AED'
+    SAVINGS = 'Deposit AED'
 
 
 @dataclass(frozen=True)
 class AccGroup:
-    AED = [Accs.ENBD, Accs.CREDIT_ENBD, Accs.CASH, Accs.CAPITAL, Accs.ADVCLUB, Accs.AED_AR]
+    AED = [Accs.ENBD, Accs.CREDIT_ENBD, Accs.CASH, Accs.CAPITAL, Accs.ADVCLUB, Accs.AED_AR, Accs.SAVINGS]

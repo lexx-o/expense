@@ -25,11 +25,12 @@ class Accs:
     CAPITAL = 'Capital AED'
     ADVCLUB = 'AED AdvClub'
     AED_AR = 'Nadya - AED'
+    SAVINGS = 'Deposit AED'
 
 
 @dataclass(frozen=True)
 class AccGroup:
-    AED = [Accs.ENBD, Accs.CAPITAL, Accs.ADVCLUB, Accs.AED_AR, Accs.CASH, Accs.CREDIT_ENBD]
+    AED = [Accs.ENBD, Accs.CAPITAL, Accs.ADVCLUB, Accs.AED_AR, Accs.CASH, Accs.CREDIT_ENBD, Accs.SAVINGS]
 
 
 figure_layout = dict(
